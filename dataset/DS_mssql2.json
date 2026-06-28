@@ -1,0 +1,17 @@
+{
+	"name": "DS_mssql2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_mssql",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"table_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}
