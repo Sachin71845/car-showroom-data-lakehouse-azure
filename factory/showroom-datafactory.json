@@ -1,0 +1,15 @@
+{
+	"name": "showroom-datafactory",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "a741eeb6-837a-4dde-9d80-a975c290b75d",
+		"tenantId": "b6d18ec9-969c-4dc3-aebc-c3e821d1b9a1"
+	}
+}
