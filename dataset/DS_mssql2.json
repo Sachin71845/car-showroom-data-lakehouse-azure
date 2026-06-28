@@ -11,9 +11,6 @@
 			},
 			"schema_name": {
 				"type": "string"
-			},
-			"schema_name2": {
-				"type": "string"
 			}
 		},
 		"annotations": [],
