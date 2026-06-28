@@ -1,0 +1,198 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "showroom-datafactory"
+		},
+		"LS_mssql_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_mssql'"
+		},
+		"LS_postegree_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_postegree'"
+		},
+		"LS_mssql_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "localhost"
+		},
+		"LS_mssql_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "Car_Showroom_Enterprise"
+		},
+		"LS_mssql_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "sa"
+		},
+		"LS_postegree_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "localhost"
+		},
+		"LS_postegree_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "Marketing_Enterprise_DB"
+		},
+		"LS_postegree_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "postgres"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/shir-desktop')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_mssql')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SqlServer",
+				"typeProperties": {
+					"server": "[parameters('LS_mssql_properties_typeProperties_server')]",
+					"database": "[parameters('LS_mssql_properties_typeProperties_database')]",
+					"encrypt": "optional",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_mssql_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_mssql_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "shir-desktop",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/shir-desktop')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_postegree')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "PostgreSqlV2",
+				"typeProperties": {
+					"server": "[parameters('LS_postegree_properties_typeProperties_server')]",
+					"port": 5432,
+					"database": "[parameters('LS_postegree_properties_typeProperties_database')]",
+					"username": "[parameters('LS_postegree_properties_typeProperties_username')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_postegree_password')]"
+					},
+					"sslMode": 2,
+					"authenticationType": "Basic"
+				},
+				"connectVia": {
+					"referenceName": "shir-desktop",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/shir-desktop')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_mssql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_mssql",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "data_factory_control_log"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_mssql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_postgresql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_postegree",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "PostgreSqlV2Table",
+				"schema": [],
+				"typeProperties": {
+					"schema": "public",
+					"table": "marketing_leads"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_postegree')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sql_server_to_broze')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get_Table_List",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "DS_mssql",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_mssql')]"
+			]
+		}
+	]
+}
