@@ -1,0 +1,6 @@
+{
+	"name": "shir-desktop",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}
