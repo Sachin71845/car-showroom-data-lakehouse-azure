@@ -1,0 +1,16 @@
+{
+	"name": "DS_postgreesql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_postegree",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "PostgreSqlV2Table",
+		"schema": [],
+		"typeProperties": {
+			"schema": "public",
+			"table": "marketing_leads"
+		}
+	}
+}

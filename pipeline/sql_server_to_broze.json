@@ -89,7 +89,7 @@
 								],
 								"ifTrueActivities": [
 									{
-										"name": "copy-mssql",
+										"name": "copy-postgree",
 										"type": "Copy",
 										"dependsOn": [],
 										"policy": {
@@ -101,8 +101,41 @@
 										},
 										"userProperties": [],
 										"typeProperties": {
-											"enableStaging": false
-										}
+											"source": {
+												"type": "PostgreSqlV2Source",
+												"queryTimeout": "02:00:00"
+											},
+											"sink": {
+												"type": "ParquetSink",
+												"storeSettings": {
+													"type": "AzureBlobFSWriteSettings"
+												},
+												"formatSettings": {
+													"type": "ParquetWriteSettings"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "DS_postgreesql",
+												"type": "DatasetReference"
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "DS_bronze",
+												"type": "DatasetReference"
+											}
+										]
 									}
 								]
 							}
