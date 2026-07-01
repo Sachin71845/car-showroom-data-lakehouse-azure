@@ -137,7 +137,10 @@
 										"outputs": [
 											{
 												"referenceName": "DS_bronze",
-												"type": "DatasetReference"
+												"type": "DatasetReference",
+												"parameters": {
+													"target_directory": "@item().target_directory"
+												}
 											}
 										]
 									}
