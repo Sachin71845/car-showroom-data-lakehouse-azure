@@ -168,7 +168,8 @@
 												"referenceName": "DS_postgreesql",
 												"type": "DatasetReference",
 												"parameters": {
-													"schemaname": "item().source_schema"
+													"schemaname": "@item().source_schema",
+													"tablename": "@item().source_table"
 												}
 											}
 										],
