@@ -291,7 +291,7 @@
 											"source": {
 												"type": "PostgreSqlV2Source",
 												"query": {
-													"value": "@concat(\r\n'SELECT MAX(',\r\nitem().watermark_column,\r\n') AS MaxWatermark FROM ',\r\nitem().source_schema,\r\n'.',\r\nitem().source_table\r\n)",
+													"value": "@concat(\n'SELECT MAX(',\nitem().watermark_column,\n') AS MaxWatermark FROM ',\nitem().source_schema,\n'.',\nitem().source_table\n)",
 													"type": "Expression"
 												},
 												"queryTimeout": "02:00:00"
