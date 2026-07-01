@@ -1,0 +1,47 @@
+{
+	"name": "DS_mssql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_mssql",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [
+			{
+				"name": "source_db_type",
+				"type": "varchar"
+			},
+			{
+				"name": "source_linked_service",
+				"type": "varchar"
+			},
+			{
+				"name": "source_schema",
+				"type": "varchar"
+			},
+			{
+				"name": "source_table",
+				"type": "varchar"
+			},
+			{
+				"name": "target_directory",
+				"type": "varchar"
+			},
+			{
+				"name": "watermark_column",
+				"type": "varchar"
+			},
+			{
+				"name": "last_load_value",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "data_factory_control_log"
+		}
+	}
+}
