@@ -80,6 +80,39 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DS_bronze')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"target_directory": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().target_directory",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/LS_mssql')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
@@ -136,39 +169,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_bronze')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureDataLakeStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"target_directory": {
-						"type": "string"
-					}
-				},
-				"annotations": [],
-				"type": "Parquet",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobFSLocation",
-						"folderPath": {
-							"value": "@dataset().target_directory",
-							"type": "Expression"
-						},
-						"fileSystem": "bronze"
-					},
-					"compressionCodec": "snappy"
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/DS_mssql')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -221,32 +221,6 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_postgreesql')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "LS_postegree",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"schemaname": {
-						"type": "string"
-					},
-					"tablename": {
-						"type": "string"
-					}
-				},
-				"annotations": [],
-				"type": "PostgreSqlV2Table",
-				"schema": [],
-				"typeProperties": {}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/LS_postegree')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('factoryName'), '/DS_mssql_dynamic')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -270,6 +244,32 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_mssql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_postgreesql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_postegree",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"schemaname": {
+						"type": "string"
+					},
+					"tablename": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "PostgreSqlV2Table",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_postegree')]"
 			]
 		},
 		{
@@ -349,7 +349,10 @@
 												"typeProperties": {
 													"source": {
 														"type": "SqlServerSource",
-														"sqlReaderQuery": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+														"sqlReaderQuery": {
+															"value": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+															"type": "Expression"
+														},
 														"queryTimeout": "02:00:00",
 														"partitionOption": "None"
 													},
@@ -400,6 +403,94 @@
 														}
 													}
 												]
+											},
+											{
+												"name": "mssql_max_load_date",
+												"type": "Lookup",
+												"dependsOn": [
+													{
+														"activity": "Copy MSSQL",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": {
+															"value": "@concat(\n'SELECT MAX(',\nitem().watermark_column,\n') AS MaxWatermark FROM ',\nitem().source_schema,\n'.',\nitem().source_table\n)",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"dataset": {
+														"referenceName": "DS_mssql_dynamic",
+														"type": "DatasetReference",
+														"parameters": {
+															"Schemaname": {
+																"value": "@item().source_schema",
+																"type": "Expression"
+															},
+															"Tablename": {
+																"value": "@item().source_table",
+																"type": "Expression"
+															}
+														}
+													}
+												}
+											},
+											{
+												"name": "Stored procedure mssql",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "mssql_max_load_date",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[dbo].[usp_UpdateWatermark]",
+													"storedProcedureParameters": {
+														"LastLoadValue": {
+															"value": {
+																"value": "@activity('mssql_max_load_date').output.firstRow.maxwatermark",
+																"type": "Expression"
+															},
+															"type": "DateTime"
+														},
+														"SourceTable": {
+															"value": {
+																"value": "@item().source_table",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_mssql",
+													"type": "LinkedServiceReference"
+												}
 											}
 										],
 										"ifTrueActivities": [
@@ -418,7 +509,10 @@
 												"typeProperties": {
 													"source": {
 														"type": "PostgreSqlV2Source",
-														"query": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+														"query": {
+															"value": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+															"type": "Expression"
+														},
 														"queryTimeout": "02:00:00"
 													},
 													"sink": {
@@ -459,6 +553,94 @@
 														}
 													}
 												]
+											},
+											{
+												"name": "Ps_max_load_date",
+												"type": "Lookup",
+												"dependsOn": [
+													{
+														"activity": "copy-postgree",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "PostgreSqlV2Source",
+														"query": {
+															"value": "@concat(\n'SELECT MAX(',\nitem().watermark_column,\n') AS MaxWatermark FROM ',\nitem().source_schema,\n'.',\nitem().source_table\n)",
+															"type": "Expression"
+														},
+														"queryTimeout": "02:00:00"
+													},
+													"dataset": {
+														"referenceName": "DS_postgreesql",
+														"type": "DatasetReference",
+														"parameters": {
+															"schemaname": {
+																"value": "@item().source_schema",
+																"type": "Expression"
+															},
+															"tablename": {
+																"value": "@item().source_table",
+																"type": "Expression"
+															}
+														}
+													},
+													"firstRowOnly": true
+												}
+											},
+											{
+												"name": "Stored procedure postgree",
+												"type": "SqlServerStoredProcedure",
+												"dependsOn": [
+													{
+														"activity": "Ps_max_load_date",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"storedProcedureName": "[[dbo].[usp_UpdateWatermark]",
+													"storedProcedureParameters": {
+														"LastLoadValue": {
+															"value": {
+																"value": "@activity('Ps_max_load_date').output.firstRow.MaxWatermark",
+																"type": "Expression"
+															},
+															"type": "DateTime"
+														},
+														"SourceTable": {
+															"value": {
+																"value": "@item().source_table",
+																"type": "Expression"
+															},
+															"type": "String"
+														}
+													}
+												},
+												"linkedServiceName": {
+													"referenceName": "LS_mssql",
+													"type": "LinkedServiceReference"
+												}
 											}
 										]
 									}
@@ -476,6 +658,7 @@
 				"[concat(variables('factoryId'), '/datasets/DS_mssql')]",
 				"[concat(variables('factoryId'), '/datasets/DS_mssql_dynamic')]",
 				"[concat(variables('factoryId'), '/datasets/DS_bronze')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_mssql')]",
 				"[concat(variables('factoryId'), '/datasets/DS_postgreesql')]"
 			]
 		}
