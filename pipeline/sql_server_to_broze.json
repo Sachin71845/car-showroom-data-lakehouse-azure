@@ -72,6 +72,7 @@
 										"typeProperties": {
 											"source": {
 												"type": "SqlServerSource",
+												"sqlReaderQuery": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
 												"queryTimeout": "02:00:00",
 												"partitionOption": "None"
 											},
