@@ -312,6 +312,46 @@
 											},
 											"firstRowOnly": true
 										}
+									},
+									{
+										"name": "Stored procedure postgree",
+										"type": "SqlServerStoredProcedure",
+										"dependsOn": [
+											{
+												"activity": "Ps_max_load_date",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"storedProcedureName": "[dbo].[usp_UpdateWatermark]",
+											"storedProcedureParameters": {
+												"LastLoadValue": {
+													"value": {
+														"value": "@activity('Ps_max_load_date').output.firstRow.MaxWatermark",
+														"type": "Expression"
+													},
+													"type": "DateTime"
+												},
+												"SourceTable": {
+													"value": "@item().source_table",
+													"type": "String"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "LS_mssql",
+											"type": "LinkedServiceReference"
+										}
 									}
 								]
 							}
