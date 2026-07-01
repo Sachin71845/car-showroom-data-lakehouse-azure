@@ -72,7 +72,10 @@
 										"typeProperties": {
 											"source": {
 												"type": "SqlServerSource",
-												"sqlReaderQuery": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+												"sqlReaderQuery": {
+													"value": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+													"type": "Expression"
+												},
 												"queryTimeout": "02:00:00",
 												"partitionOption": "None"
 											},
@@ -199,7 +202,10 @@
 													"type": "DateTime"
 												},
 												"SourceTable": {
-													"value": "@item().source_table",
+													"value": {
+														"value": "@item().source_table",
+														"type": "Expression"
+													},
 													"type": "String"
 												}
 											}
@@ -226,7 +232,10 @@
 										"typeProperties": {
 											"source": {
 												"type": "PostgreSqlV2Source",
-												"query": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+												"query": {
+													"value": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+													"type": "Expression"
+												},
 												"queryTimeout": "02:00:00"
 											},
 											"sink": {
@@ -343,7 +352,10 @@
 													"type": "DateTime"
 												},
 												"SourceTable": {
-													"value": "@item().source_table",
+													"value": {
+														"value": "@item().source_table",
+														"type": "Expression"
+													},
 													"type": "String"
 												}
 											}
@@ -358,16 +370,6 @@
 						}
 					]
 				}
-			},
-			{
-				"name": "Max load Date",
-				"type": "SetVariable",
-				"dependsOn": [],
-				"policy": {
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": []
 			}
 		],
 		"annotations": []
