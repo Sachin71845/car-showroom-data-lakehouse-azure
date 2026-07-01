@@ -225,7 +225,7 @@
 													}
 												}
 											},
-											"firstRowOnly": false
+											"firstRowOnly": true
 										}
 									}
 								]
