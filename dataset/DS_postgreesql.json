@@ -5,12 +5,16 @@
 			"referenceName": "LS_postegree",
 			"type": "LinkedServiceReference"
 		},
+		"parameters": {
+			"schemaname": {
+				"type": "string"
+			},
+			"tablename": {
+				"type": "string"
+			}
+		},
 		"annotations": [],
 		"type": "PostgreSqlV2Table",
-		"schema": [],
-		"typeProperties": {
-			"schema": "public",
-			"table": "marketing_leads"
-		}
+		"schema": []
 	}
 }
