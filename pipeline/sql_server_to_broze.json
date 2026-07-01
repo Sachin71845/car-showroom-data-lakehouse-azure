@@ -141,6 +141,7 @@
 										"typeProperties": {
 											"source": {
 												"type": "PostgreSqlV2Source",
+												"query": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
 												"queryTimeout": "02:00:00"
 											},
 											"sink": {
@@ -165,7 +166,10 @@
 										"inputs": [
 											{
 												"referenceName": "DS_postgreesql",
-												"type": "DatasetReference"
+												"type": "DatasetReference",
+												"parameters": {
+													"schemaname": "item().source_schema"
+												}
 											}
 										],
 										"outputs": [
