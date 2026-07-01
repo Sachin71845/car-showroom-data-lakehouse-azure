@@ -123,6 +123,91 @@
 												}
 											}
 										]
+									},
+									{
+										"name": "mssql_max_load_date",
+										"type": "Lookup",
+										"dependsOn": [
+											{
+												"activity": "Copy MSSQL",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "SqlServerSource",
+												"sqlReaderQuery": {
+													"value": "@concat(\n'SELECT MAX(',\nitem().watermark_column,\n') AS MaxWatermark FROM ',\nitem().source_schema,\n'.',\nitem().source_table\n)",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"dataset": {
+												"referenceName": "DS_mssql_dynamic",
+												"type": "DatasetReference",
+												"parameters": {
+													"Schemaname": {
+														"value": "@item().source_schema",
+														"type": "Expression"
+													},
+													"Tablename": {
+														"value": "@item().source_table",
+														"type": "Expression"
+													}
+												}
+											}
+										}
+									},
+									{
+										"name": "Stored procedure mssql",
+										"type": "SqlServerStoredProcedure",
+										"dependsOn": [
+											{
+												"activity": "mssql_max_load_date",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"storedProcedureName": "[dbo].[usp_UpdateWatermark]",
+											"storedProcedureParameters": {
+												"LastLoadValue": {
+													"value": {
+														"value": "@activity('mssql_max_load_date').output.firstRow.maxwatermark",
+														"type": "Expression"
+													},
+													"type": "DateTime"
+												},
+												"SourceTable": {
+													"value": "@item().source_table",
+													"type": "String"
+												}
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "LS_mssql",
+											"type": "LinkedServiceReference"
+										}
 									}
 								],
 								"ifTrueActivities": [
