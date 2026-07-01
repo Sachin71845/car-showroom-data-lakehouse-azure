@@ -5,11 +5,17 @@
 		"factoryName": {
 			"value": "showroom-datafactory"
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
 		"LS_mssql_password": {
 			"value": ""
 		},
 		"LS_postegree_password": {
 			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://showroomdatalake.dfs.core.windows.net/"
 		},
 		"LS_mssql_properties_typeProperties_server": {
 			"value": "localhost"

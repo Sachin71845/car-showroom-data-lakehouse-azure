@@ -7,6 +7,10 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "showroom-datafactory"
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
 		"LS_mssql_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'LS_mssql'"
@@ -14,6 +18,10 @@
 		"LS_postegree_password": {
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'LS_postegree'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://showroomdatalake.dfs.core.windows.net/"
 		},
 		"LS_mssql_properties_typeProperties_server": {
 			"type": "string",
@@ -44,6 +52,23 @@
 		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
 		{
 			"name": "[concat(parameters('factoryName'), '/shir-desktop')]",
 			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
@@ -111,6 +136,39 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/DS_bronze')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"target_directory": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": {
+							"value": "@dataset().target_directory",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/DS_mssql')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
@@ -121,7 +179,38 @@
 				},
 				"annotations": [],
 				"type": "SqlServerTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "source_db_type",
+						"type": "varchar"
+					},
+					{
+						"name": "source_linked_service",
+						"type": "varchar"
+					},
+					{
+						"name": "source_schema",
+						"type": "varchar"
+					},
+					{
+						"name": "source_table",
+						"type": "varchar"
+					},
+					{
+						"name": "target_directory",
+						"type": "varchar"
+					},
+					{
+						"name": "watermark_column",
+						"type": "varchar"
+					},
+					{
+						"name": "last_load_value",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
 				"typeProperties": {
 					"schema": "dbo",
 					"table": "data_factory_control_log"
@@ -132,7 +221,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_postgresql')]",
+			"name": "[concat(parameters('factoryName'), '/DS_postgreesql')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -140,16 +229,47 @@
 					"referenceName": "LS_postegree",
 					"type": "LinkedServiceReference"
 				},
+				"parameters": {
+					"schemaname": {
+						"type": "string"
+					},
+					"tablename": {
+						"type": "string"
+					}
+				},
 				"annotations": [],
 				"type": "PostgreSqlV2Table",
 				"schema": [],
-				"typeProperties": {
-					"schema": "public",
-					"table": "marketing_leads"
-				}
+				"typeProperties": {}
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_postegree')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_mssql_dynamic')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_mssql",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"Schemaname": {
+						"type": "string"
+					},
+					"Tablename": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_mssql')]"
 			]
 		},
 		{
@@ -183,6 +303,168 @@
 							},
 							"firstRowOnly": false
 						}
+					},
+					{
+						"name": "check_table_name",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get_Table_List",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get_Table_List').output.value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Check_Database_Type",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(item().source_db_type,'PostgreSQL')",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "Copy MSSQL",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "SqlServerSource",
+														"sqlReaderQuery": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+														"queryTimeout": "02:00:00",
+														"partitionOption": "None"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "DS_mssql_dynamic",
+														"type": "DatasetReference",
+														"parameters": {
+															"Schemaname": {
+																"value": "@item().source_schema",
+																"type": "Expression"
+															},
+															"Tablename": {
+																"value": "@item().source_table",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "DS_bronze",
+														"type": "DatasetReference",
+														"parameters": {
+															"target_directory": {
+																"value": "@item().target_directory",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "copy-postgree",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "PostgreSqlV2Source",
+														"query": "@concat(\n'SELECT * FROM ',\nitem().source_schema,\n'.',\nitem().source_table,\n' WHERE ',\nitem().watermark_column,\n' > ''',\nitem().last_load_value,\n''''\n)",
+														"queryTimeout": "02:00:00"
+													},
+													"sink": {
+														"type": "ParquetSink",
+														"storeSettings": {
+															"type": "AzureBlobFSWriteSettings"
+														},
+														"formatSettings": {
+															"type": "ParquetWriteSettings"
+														}
+													},
+													"enableStaging": false,
+													"translator": {
+														"type": "TabularTranslator",
+														"typeConversion": true,
+														"typeConversionSettings": {
+															"allowDataTruncation": true,
+															"treatBooleanAsNumber": false
+														}
+													}
+												},
+												"inputs": [
+													{
+														"referenceName": "DS_postgreesql",
+														"type": "DatasetReference",
+														"parameters": {
+															"schemaname": "@item().source_schema",
+															"tablename": "@item().source_table"
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "DS_bronze",
+														"type": "DatasetReference",
+														"parameters": {
+															"target_directory": "@item().target_directory"
+														}
+													}
+												]
+											}
+										]
+									}
+								}
+							]
+						}
 					}
 				],
 				"policy": {
@@ -191,7 +473,10 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/DS_mssql')]"
+				"[concat(variables('factoryId'), '/datasets/DS_mssql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_mssql_dynamic')]",
+				"[concat(variables('factoryId'), '/datasets/DS_bronze')]",
+				"[concat(variables('factoryId'), '/datasets/DS_postgreesql')]"
 			]
 		}
 	]
