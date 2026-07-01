@@ -1,0 +1,20 @@
+{
+	"name": "DS_mssql_dynamic",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_mssql",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Schemaname": {
+				"type": "string"
+			},
+			"Tablename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}
