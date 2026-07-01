@@ -182,12 +182,67 @@
 												}
 											}
 										]
+									},
+									{
+										"name": "Ps_max_load_date",
+										"type": "Lookup",
+										"dependsOn": [
+											{
+												"activity": "copy-postgree",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "PostgreSqlV2Source",
+												"query": {
+													"value": "@concat(\r\n'SELECT MAX(',\r\nitem().watermark_column,\r\n') AS MaxWatermark FROM ',\r\nitem().source_schema,\r\n'.',\r\nitem().source_table\r\n)",
+													"type": "Expression"
+												},
+												"queryTimeout": "02:00:00"
+											},
+											"dataset": {
+												"referenceName": "DS_postgreesql",
+												"type": "DatasetReference",
+												"parameters": {
+													"schemaname": {
+														"value": "@item().source_schema",
+														"type": "Expression"
+													},
+													"tablename": {
+														"value": "@item().source_table",
+														"type": "Expression"
+													}
+												}
+											},
+											"firstRowOnly": false
+										}
 									}
 								]
 							}
 						}
 					]
 				}
+			},
+			{
+				"name": "Max load Date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": []
 			}
 		],
 		"annotations": []
