@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "showroom-datafactory"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"LS_mssql_password": {
+			"value": ""
+		},
+		"LS_postegree_password": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://showroomdatalake.dfs.core.windows.net/"
+		},
+		"LS_mssql_properties_typeProperties_server": {
+			"value": "localhost"
+		},
+		"LS_mssql_properties_typeProperties_database": {
+			"value": "Car_Showroom_Enterprise"
+		},
+		"LS_mssql_properties_typeProperties_userName": {
+			"value": "sa"
+		},
+		"LS_postegree_properties_typeProperties_server": {
+			"value": "localhost"
+		},
+		"LS_postegree_properties_typeProperties_database": {
+			"value": "Marketing_Enterprise_DB"
+		},
+		"LS_postegree_properties_typeProperties_username": {
+			"value": "postgres"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
